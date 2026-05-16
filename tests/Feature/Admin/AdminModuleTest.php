@@ -108,6 +108,18 @@ test('admin can update system setting', function () {
     ]);
 });
 
+test('school name from system settings is shown in app title and sidebar brand', function () {
+    $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+    IdentitasSekolah::query()->create(['nama_sekolah' => 'MTs Badrul Arifin']);
+
+    $response = $this->actingAs($admin)->get(route('admin.dashboard'));
+
+    $response->assertOk();
+    $response->assertSee('<title>MTs Badrul Arifin</title>', false);
+    $response->assertSee('MTs Badrul Arifin');
+    $response->assertSee('Sistem Monitoring Sekolah');
+});
+
 test('admin can create bell setting with audio upload', function () {
     Storage::fake('public');
 
