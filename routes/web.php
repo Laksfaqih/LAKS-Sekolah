@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\BackupController;
+use App\Http\Controllers\Admin\BellOperatorController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\GuruController;
 use App\Http\Controllers\Admin\JadwalPelajaranController;
@@ -47,6 +48,16 @@ Route::middleware('auth')->group(function () {
         ->middleware('role:admin')
         ->group(function () {
             Route::get('/dashboard', AdminDashboardController::class)->name('dashboard');
+            Route::prefix('bell-operator')
+                ->as('bell-operator.')
+                ->group(function () {
+                    Route::get('status', [BellOperatorController::class, 'status'])->name('status');
+                    Route::post('activate', [BellOperatorController::class, 'activate'])->name('activate');
+                    Route::post('heartbeat', [BellOperatorController::class, 'heartbeat'])->name('heartbeat');
+                    Route::post('deactivate', [BellOperatorController::class, 'deactivate'])->name('deactivate');
+                    Route::get('pending', [BellOperatorController::class, 'pending'])->name('pending');
+                    Route::post('triggers/{bellTrigger}/acknowledge', [BellOperatorController::class, 'acknowledge'])->name('acknowledge');
+                });
             Route::resource('gurus', GuruController::class)->except('show');
             Route::resource('mata-pelajaran', MataPelajaranController::class)->except('show');
             Route::resource('kelas', KelasController::class)->parameters(['kelas' => 'kelas'])->except('show');

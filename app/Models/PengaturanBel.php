@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class PengaturanBel extends Model
 {
@@ -34,5 +35,14 @@ class PengaturanBel extends Model
     public static function tipeOptions(): array
     {
         return self::TIPE_OPTIONS;
+    }
+
+    public function getAudioUrlAttribute(): ?string
+    {
+        if (! $this->audio_path) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($this->audio_path);
     }
 }
