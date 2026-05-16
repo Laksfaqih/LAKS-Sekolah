@@ -29,10 +29,179 @@
             x-data="{
                 sidebarOpen: false,
                 darkMode: document.documentElement.classList.contains('dark'),
+                isAdminBellEnabled: @js(auth()->user()?->isAdmin() ?? false),
+                bellBrowserToken: null,
+                bellOperatorStatus: 'inactive',
+                bellOperatorMessage: 'Audio bel belum aktif.',
+                bellHeartbeatTimer: null,
+                bellPollingTimer: null,
+                activeBellTriggerId: null,
+                bellAcknowledgeBaseUrl: @js(url('/admin/bell-operator/triggers')),
+                init() {
+                    if (! this.isAdminBellEnabled) {
+                        return;
+                    }
+
+                    this.bellBrowserToken = this.ensureBellBrowserToken();
+                    this.syncBellOperatorStatus();
+                },
                 toggleDarkMode() {
                     this.darkMode = ! this.darkMode;
                     document.documentElement.classList.toggle('dark', this.darkMode);
                     localStorage.setItem('theme', this.darkMode ? 'dark' : 'light');
+                },
+                ensureBellBrowserToken() {
+                    const storageKey = 'bell-browser-token';
+                    let token = localStorage.getItem(storageKey);
+
+                    if (! token) {
+                        token = `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+                        localStorage.setItem(storageKey, token);
+                    }
+
+                    return token;
+                },
+                bellStatusText(status) {
+                    if (status === 'active') {
+                        return 'Operator bel aktif di browser ini.';
+                    }
+
+                    if (status === 'active_elsewhere') {
+                        return 'Operator bel sedang aktif di browser lain.';
+                    }
+
+                    return 'Audio bel belum aktif.';
+                },
+                async bellRequest(url, method = 'GET', payload = null) {
+                    const options = {
+                        method,
+                        headers: {
+                            'Accept': 'application/json',
+                        },
+                    };
+
+                    let requestUrl = new URL(url, window.location.origin);
+
+                    if (method === 'GET' && payload) {
+                        requestUrl.search = new URLSearchParams(payload).toString();
+                    }
+
+                    if (method !== 'GET') {
+                        options.headers['Content-Type'] = 'application/json';
+                        options.headers['X-CSRF-TOKEN'] = document.querySelector('meta[name=csrf-token]').content;
+                        options.body = JSON.stringify(payload ?? {});
+                    }
+
+                    const response = await fetch(requestUrl.toString(), options);
+
+                    return await response.json();
+                },
+                applyBellStatus(payload) {
+                    this.bellOperatorStatus = payload.status ?? 'inactive';
+                    this.bellOperatorMessage = this.bellStatusText(this.bellOperatorStatus);
+
+                    if (this.bellOperatorStatus === 'active') {
+                        this.startBellRuntime();
+                    } else {
+                        this.stopBellRuntime();
+                    }
+                },
+                async syncBellOperatorStatus() {
+                    const payload = await this.bellRequest(@js(route('admin.bell-operator.status')), 'GET', {
+                        browser_token: this.bellBrowserToken,
+                    });
+
+                    this.applyBellStatus(payload);
+                },
+                async activateBellOperator() {
+                    const payload = await this.bellRequest(@js(route('admin.bell-operator.activate')), 'POST', {
+                        browser_token: this.bellBrowserToken,
+                    });
+
+                    this.applyBellStatus(payload);
+                },
+                async deactivateBellOperator() {
+                    const payload = await this.bellRequest(@js(route('admin.bell-operator.deactivate')), 'POST', {
+                        browser_token: this.bellBrowserToken,
+                    });
+
+                    this.applyBellStatus(payload);
+                },
+                startBellRuntime() {
+                    if (this.bellHeartbeatTimer || this.bellPollingTimer) {
+                        return;
+                    }
+
+                    this.pollPendingBell();
+
+                    this.bellHeartbeatTimer = setInterval(() => {
+                        this.heartbeatBellOperator();
+                    }, 10000);
+
+                    this.bellPollingTimer = setInterval(() => {
+                        this.pollPendingBell();
+                    }, 5000);
+                },
+                stopBellRuntime() {
+                    if (this.bellHeartbeatTimer) {
+                        clearInterval(this.bellHeartbeatTimer);
+                        this.bellHeartbeatTimer = null;
+                    }
+
+                    if (this.bellPollingTimer) {
+                        clearInterval(this.bellPollingTimer);
+                        this.bellPollingTimer = null;
+                    }
+                },
+                async heartbeatBellOperator() {
+                    const payload = await this.bellRequest(@js(route('admin.bell-operator.heartbeat')), 'POST', {
+                        browser_token: this.bellBrowserToken,
+                    });
+
+                    this.applyBellStatus(payload);
+                },
+                async pollPendingBell() {
+                    if (this.activeBellTriggerId || this.bellOperatorStatus !== 'active') {
+                        return;
+                    }
+
+                    const payload = await this.bellRequest(@js(route('admin.bell-operator.pending')), 'GET', {
+                        browser_token: this.bellBrowserToken,
+                    });
+
+                    this.applyBellStatus(payload);
+
+                    if (! payload.trigger) {
+                        return;
+                    }
+
+                    await this.playBellTrigger(payload.trigger);
+                },
+                async acknowledgeBellTrigger(triggerId, result, failureReason = null) {
+                    await this.bellRequest(`${this.bellAcknowledgeBaseUrl}/${triggerId}/acknowledge`, 'POST', {
+                        browser_token: this.bellBrowserToken,
+                        result,
+                        failure_reason: failureReason,
+                    });
+                },
+                async playBellTrigger(trigger) {
+                    this.activeBellTriggerId = trigger.id;
+
+                    try {
+                        const audio = new Audio(trigger.audio_url);
+                        await audio.play();
+                        await this.acknowledgeBellTrigger(trigger.id, 'played');
+                        this.bellOperatorMessage = `Bel ${trigger.nama} berhasil diputar.`;
+                    } catch (error) {
+                        await this.acknowledgeBellTrigger(
+                            trigger.id,
+                            'failed',
+                            'Browser gagal memutar audio. Aktifkan audio bel terlebih dahulu.',
+                        );
+                        this.bellOperatorMessage = `Gagal memutar bel ${trigger.nama}.`;
+                    } finally {
+                        this.activeBellTriggerId = null;
+                    }
                 },
             }"
             class="min-h-screen bg-slate-100 transition-colors duration-300 lg:flex lg:h-screen"
@@ -59,6 +228,24 @@
                         </div>
 
                         <div class="flex items-center gap-3">
+                            @if (auth()->user()?->isAdmin())
+                                <div class="hidden text-right xl:block">
+                                    <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Operator Bel</p>
+                                    <p class="text-xs text-slate-600" x-text="bellOperatorMessage"></p>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    @click="bellOperatorStatus === 'active' ? deactivateBellOperator() : activateBellOperator()"
+                                    class="inline-flex items-center rounded-2xl px-3 py-2.5 text-sm font-medium shadow-sm transition"
+                                    :class="bellOperatorStatus === 'active'
+                                        ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                                        : 'border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:text-slate-900'"
+                                >
+                                    <span x-text="bellOperatorStatus === 'active' ? 'Audio Bel Aktif' : 'Aktifkan Audio Bel'"></span>
+                                </button>
+                            @endif
+
                             <button
                                 type="button"
                                 @click="toggleDarkMode()"
