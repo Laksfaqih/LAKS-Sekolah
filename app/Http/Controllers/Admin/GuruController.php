@@ -5,8 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\GuruRequest;
 use App\Models\Guru;
-use Illuminate\Http\Request;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class GuruController extends Controller
@@ -39,7 +40,7 @@ class GuruController extends Controller
     public function create(): View
     {
         return view('admin.gurus.create', [
-            'guru' => new Guru(),
+            'guru' => new Guru,
         ]);
     }
 
@@ -84,7 +85,16 @@ class GuruController extends Controller
      */
     public function destroy(Guru $guru): RedirectResponse
     {
-        $guru->delete();
+        try {
+            $guru->delete();
+        } catch (QueryException $exception) {
+            if (! $this->isForeignKeyConstraintViolation($exception)) {
+                throw $exception;
+            }
+
+            return redirect()->route('admin.gurus.index')
+                ->with('error', 'Data guru tidak dapat dihapus karena masih digunakan pada jadwal atau presensi guru.');
+        }
 
         return redirect()->route('admin.gurus.index')
             ->with('success', 'Data guru berhasil dihapus.');

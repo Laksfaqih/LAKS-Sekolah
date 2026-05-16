@@ -5,8 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MataPelajaranRequest;
 use App\Models\MataPelajaran;
-use Illuminate\Http\Request;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class MataPelajaranController extends Controller
@@ -38,7 +39,7 @@ class MataPelajaranController extends Controller
     public function create(): View
     {
         return view('admin.mata-pelajaran.create', [
-            'mataPelajaran' => new MataPelajaran(),
+            'mataPelajaran' => new MataPelajaran,
         ]);
     }
 
@@ -77,7 +78,16 @@ class MataPelajaranController extends Controller
      */
     public function destroy(MataPelajaran $mataPelajaran): RedirectResponse
     {
-        $mataPelajaran->delete();
+        try {
+            $mataPelajaran->delete();
+        } catch (QueryException $exception) {
+            if (! $this->isForeignKeyConstraintViolation($exception)) {
+                throw $exception;
+            }
+
+            return redirect()->route('admin.mata-pelajaran.index')
+                ->with('error', 'Mata pelajaran tidak dapat dihapus karena masih digunakan pada jadwal pelajaran.');
+        }
 
         return redirect()->route('admin.mata-pelajaran.index')
             ->with('success', 'Mata pelajaran berhasil dihapus.');

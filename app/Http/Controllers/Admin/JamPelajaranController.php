@@ -5,8 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\JamPelajaranRequest;
 use App\Models\JamPelajaran;
-use Illuminate\Http\Request;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class JamPelajaranController extends Controller
@@ -35,7 +36,7 @@ class JamPelajaranController extends Controller
     public function create(): View
     {
         return view('admin.jam-pelajaran.create', [
-            'jamPelajaran' => new JamPelajaran(),
+            'jamPelajaran' => new JamPelajaran,
         ]);
     }
 
@@ -74,7 +75,16 @@ class JamPelajaranController extends Controller
      */
     public function destroy(JamPelajaran $jamPelajaran): RedirectResponse
     {
-        $jamPelajaran->delete();
+        try {
+            $jamPelajaran->delete();
+        } catch (QueryException $exception) {
+            if (! $this->isForeignKeyConstraintViolation($exception)) {
+                throw $exception;
+            }
+
+            return redirect()->route('admin.jam-pelajaran.index')
+                ->with('error', 'Jam pelajaran tidak dapat dihapus karena masih digunakan pada jadwal pelajaran.');
+        }
 
         return redirect()->route('admin.jam-pelajaran.index')
             ->with('success', 'Jam pelajaran berhasil dihapus.');
