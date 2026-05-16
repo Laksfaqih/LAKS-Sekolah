@@ -5,8 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\KelasRequest;
 use App\Models\Kelas;
-use Illuminate\Http\Request;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class KelasController extends Controller
@@ -39,7 +40,7 @@ class KelasController extends Controller
     public function create(): View
     {
         return view('admin.kelas.create', [
-            'kelas' => new Kelas(),
+            'kelas' => new Kelas,
         ]);
     }
 
@@ -78,7 +79,16 @@ class KelasController extends Controller
      */
     public function destroy(Kelas $kelas): RedirectResponse
     {
-        $kelas->delete();
+        try {
+            $kelas->delete();
+        } catch (QueryException $exception) {
+            if (! $this->isForeignKeyConstraintViolation($exception)) {
+                throw $exception;
+            }
+
+            return redirect()->route('admin.kelas.index')
+                ->with('error', 'Data kelas tidak dapat dihapus karena masih digunakan pada jadwal pelajaran.');
+        }
 
         return redirect()->route('admin.kelas.index')
             ->with('success', 'Data kelas berhasil dihapus.');

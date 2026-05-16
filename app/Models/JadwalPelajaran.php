@@ -3,9 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
 class JadwalPelajaran extends Model
@@ -63,6 +63,10 @@ class JadwalPelajaran extends Model
     {
         $now ??= now();
 
-        return self::HARI_OPTIONS[$now->dayOfWeekIso - 1];
+        if ($now->dayOfWeekIso === 7) {
+            return 'Minggu';
+        }
+
+        return self::HARI_OPTIONS[$now->dayOfWeekIso - 1] ?? 'Minggu';
     }
 }

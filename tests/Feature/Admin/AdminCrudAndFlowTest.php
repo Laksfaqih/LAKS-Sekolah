@@ -239,3 +239,49 @@ test('admin end to end flow works across core modules', function () {
     $this->actingAs($admin)->get(route('admin.reports.jadwal.pdf'))->assertOk()->assertHeader('content-type', 'application/pdf');
     $this->actingAs($admin)->get(route('admin.backup-restore.edit'))->assertOk();
 });
+
+test('admin gets a friendly error when deleting referenced master data', function () {
+    $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+    $guru = Guru::query()->create(['nama' => 'Guru Referensi', 'email' => 'guru-ref@example.com']);
+    $mataPelajaran = MataPelajaran::query()->create(['kode' => 'REF01', 'nama' => 'Mapel Referensi']);
+    $kelas = Kelas::query()->create(['nama' => 'X REF 1']);
+    $jam = JamPelajaran::query()->create([
+        'nama' => 'Jam Referensi',
+        'urutan' => 1,
+        'jam_mulai' => '07:00',
+        'jam_selesai' => '08:00',
+    ]);
+
+    JadwalPelajaran::query()->create([
+        'hari' => 'Senin',
+        'guru_id' => $guru->id,
+        'mata_pelajaran_id' => $mataPelajaran->id,
+        'kelas_id' => $kelas->id,
+        'jam_pelajaran_id' => $jam->id,
+    ]);
+
+    $this->actingAs($admin)
+        ->delete(route('admin.kelas.destroy', $kelas))
+        ->assertRedirect(route('admin.kelas.index'))
+        ->assertSessionHas('error', 'Data kelas tidak dapat dihapus karena masih digunakan pada jadwal pelajaran.');
+
+    $this->actingAs($admin)
+        ->delete(route('admin.mata-pelajaran.destroy', $mataPelajaran))
+        ->assertRedirect(route('admin.mata-pelajaran.index'))
+        ->assertSessionHas('error', 'Mata pelajaran tidak dapat dihapus karena masih digunakan pada jadwal pelajaran.');
+
+    $this->actingAs($admin)
+        ->delete(route('admin.jam-pelajaran.destroy', $jam))
+        ->assertRedirect(route('admin.jam-pelajaran.index'))
+        ->assertSessionHas('error', 'Jam pelajaran tidak dapat dihapus karena masih digunakan pada jadwal pelajaran.');
+
+    $this->actingAs($admin)
+        ->delete(route('admin.gurus.destroy', $guru))
+        ->assertRedirect(route('admin.gurus.index'))
+        ->assertSessionHas('error', 'Data guru tidak dapat dihapus karena masih digunakan pada jadwal atau presensi guru.');
+
+    $this->assertDatabaseHas('kelas', ['id' => $kelas->id]);
+    $this->assertDatabaseHas('mata_pelajarans', ['id' => $mataPelajaran->id]);
+    $this->assertDatabaseHas('jam_pelajarans', ['id' => $jam->id]);
+    $this->assertDatabaseHas('gurus', ['id' => $guru->id]);
+});

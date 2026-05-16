@@ -52,27 +52,19 @@ class ReportController extends Controller
     {
         [$jadwals, $filters] = $this->scheduleData($request, false);
 
-        $lines = [
-            $this->schoolProfile()['name'],
-            $this->schoolProfile()['meta'],
-            $this->reportSubtitle($filters),
-            str_repeat('-', 70),
-        ];
-
-        foreach ($jadwals as $index => $jadwal) {
-            $lines[] = sprintf(
-                '%d. %s | %s-%s | %s | %s | %s',
-                $index + 1,
+        return $this->pdfResponse(
+            'laporan-jadwal-kepsek.pdf',
+            'Laporan Jadwal Kepsek',
+            ['Hari', 'Jam', 'Guru', 'Mata Pelajaran', 'Kelas'],
+            $jadwals->map(fn ($jadwal) => [
                 $jadwal->hari,
-                $jadwal->jamPelajaran->jam_mulai,
-                $jadwal->jamPelajaran->jam_selesai,
+                "{$jadwal->jamPelajaran->jam_mulai} - {$jadwal->jamPelajaran->jam_selesai}",
                 $jadwal->guru->nama,
                 $jadwal->mataPelajaran->nama,
                 $jadwal->kelas->nama,
-            );
-        }
-
-        return $this->pdfResponse('laporan-jadwal-kepsek.pdf', 'Laporan Jadwal Kepsek', $lines);
+            ])->all(),
+            $this->reportSubtitle($filters),
+        );
     }
 
     public function presensi(Request $request): View
@@ -112,26 +104,20 @@ class ReportController extends Controller
     {
         [$presensis, $filters] = $this->attendanceData($request, false);
 
-        $lines = [
-            $this->schoolProfile()['name'],
-            $this->schoolProfile()['meta'],
-            $this->reportSubtitle($filters),
-            str_repeat('-', 70),
-        ];
-
-        foreach ($presensis as $index => $presensi) {
-            $lines[] = sprintf(
-                '%d. %s | %s | %s | %s | %s',
-                $index + 1,
+        return $this->pdfResponse(
+            'laporan-presensi-kepsek.pdf',
+            'Laporan Presensi Kepsek',
+            ['Tanggal', 'Guru', 'Status', 'Mata Pelajaran', 'Kelas', 'Catatan'],
+            $presensis->map(fn ($presensi) => [
                 $presensi->tanggal->format('Y-m-d'),
                 $presensi->guru->nama,
                 ucfirst($presensi->status),
                 $presensi->jadwalPelajaran?->mataPelajaran?->nama ?? '-',
                 $presensi->jadwalPelajaran?->kelas?->nama ?? '-',
-            );
-        }
-
-        return $this->pdfResponse('laporan-presensi-kepsek.pdf', 'Laporan Presensi Kepsek', $lines);
+                $presensi->catatan ?? '-',
+            ])->all(),
+            $this->reportSubtitle($filters),
+        );
     }
 
     private function scheduleData(Request $request, bool $paginate = true): array
@@ -174,9 +160,17 @@ class ReportController extends Controller
         return [$paginate ? $query->paginate(15)->withQueryString() : $query->get(), $filters];
     }
 
-    private function pdfResponse(string $filename, string $title, array $lines): Response
-    {
-        return response(SimplePdfBuilder::make($title, $lines), 200, [
+    private function pdfResponse(
+        string $filename,
+        string $title,
+        array $headers,
+        array $rows,
+        string $subtitle,
+    ): Response {
+        $school = $this->schoolProfile();
+        $metaLines = array_values(array_filter([$school['name'], $school['meta']]));
+
+        return response(SimplePdfBuilder::makeTable($title, $metaLines, $subtitle, $headers, $rows), 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
