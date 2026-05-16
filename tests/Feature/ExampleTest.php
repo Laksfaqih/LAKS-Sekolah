@@ -1,0 +1,7 @@
+<?php
+
+it('redirects root to login', function () {
+    $response = $this->get('/');
+
+    $response->assertRedirect(route('login', absolute: false));
+});
