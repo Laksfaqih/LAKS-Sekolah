@@ -93,7 +93,7 @@ test('kepsek end to end flow works', function () {
     $this->actingAs($kepsek)->get(route('kepsek.dashboard'))->assertOk()->assertSee('Guru Kepsek');
     $this->actingAs($kepsek)->get(route('kepsek.monitoring.index', ['hari' => JadwalPelajaran::hariIni()]))->assertOk()->assertSee('Akuntansi');
     $this->actingAs($kepsek)->get(route('kepsek.gurus.index'))->assertOk()->assertSee('Akuntansi');
-    $this->actingAs($kepsek)->get(route('kepsek.reports.jadwal'))->assertOk();
+    $this->actingAs($kepsek)->get(route('kepsek.reports.jadwal'))->assertOk()->assertDontSee('Export PDF');
     $this->actingAs($kepsek)->get(route('kepsek.reports.presensi.print'))->assertOk();
-    $this->actingAs($kepsek)->get(route('kepsek.reports.presensi.pdf'))->assertOk()->assertHeader('content-type', 'application/pdf');
+    $this->actingAs($kepsek)->get('/kepsek/reports/presensi/pdf')->assertNotFound();
 });

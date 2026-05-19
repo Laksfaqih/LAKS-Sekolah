@@ -170,12 +170,20 @@ test('admin can access report and backup modules', function () {
     $this->actingAs($admin)
         ->get(route('admin.reports.jadwal'))
         ->assertOk()
+        ->assertSee('Laporan Jadwal Pelajaran')
+        ->assertSee('Cetak')
+        ->assertDontSee('Export PDF');
+
+    $this->actingAs($admin)
+        ->get(route('admin.reports.jadwal.print'))
+        ->assertOk()
+        ->assertSee('Logo Sekolah')
+        ->assertSee('logo-sekolah.png')
         ->assertSee('Laporan Jadwal Pelajaran');
 
     $this->actingAs($admin)
-        ->get(route('admin.reports.jadwal.pdf'))
-        ->assertOk()
-        ->assertHeader('content-type', 'application/pdf');
+        ->get('/admin/reports/jadwal/pdf')
+        ->assertNotFound();
 
     $this->actingAs($admin)
         ->get(route('admin.backup-restore.edit'))

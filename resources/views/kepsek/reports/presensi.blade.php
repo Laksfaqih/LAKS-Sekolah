@@ -32,7 +32,6 @@
 
         <div class="flex flex-wrap gap-3">
             <a href="{{ route('kepsek.reports.presensi.print', request()->query()) }}" target="_blank" class="rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">Cetak</a>
-            <a href="{{ route('kepsek.reports.presensi.pdf', request()->query()) }}" class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">Export PDF</a>
         </div>
 
         <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
