@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\SystemSettingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Guru\DashboardController as GuruDashboardController;
 use App\Http\Controllers\Guru\JadwalMengajarController;
+use App\Http\Controllers\Guru\NotificationController as GuruNotificationController;
 use App\Http\Controllers\Guru\PresensiController;
 use App\Http\Controllers\Guru\ProfilController as GuruProfilController;
 use App\Http\Controllers\Kepsek\DashboardController as KepsekDashboardController;
@@ -89,6 +90,14 @@ Route::middleware('auth')->group(function () {
             Route::post('/presensi', [PresensiController::class, 'store'])->name('presensi.store');
             Route::get('/profil', [GuruProfilController::class, 'edit'])->name('profil.edit');
             Route::put('/profil', [GuruProfilController::class, 'update'])->name('profil.update');
+
+            Route::prefix('notifications')->as('notifications.')->group(function () {
+                Route::get('/', [GuruNotificationController::class, 'index'])->name('index');
+                Route::get('/poll', [GuruNotificationController::class, 'poll'])->name('poll');
+                Route::get('/recent', [GuruNotificationController::class, 'recent'])->name('recent');
+                Route::post('/{id}/read', [GuruNotificationController::class, 'markAsRead'])->name('read');
+                Route::post('/mark-all-read', [GuruNotificationController::class, 'markAllAsRead'])->name('mark-all-read');
+            });
         });
 
     Route::prefix('kepsek')
