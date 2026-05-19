@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             ScheduleSeeder::class,
             AttendanceSeeder::class,
             BellSettingSeeder::class,
+            NotificationSettingSeeder::class,
         ]);
     }
 }

@@ -260,6 +260,10 @@
                                 <span x-text="darkMode ? 'Light' : 'Dark'"></span>
                             </button>
 
+                            @if (auth()->user()?->isGuru())
+                                <x-notification-bell />
+                            @endif
+
                             <div class="flex items-center gap-3">
                                 @if (auth()->user()?->profile_photo_url)
                                     <img

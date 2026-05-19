@@ -70,3 +70,4 @@ Artisan::command('bells:check', function () {
 })->purpose('Memeriksa dan memicu jadwal bel aktif');
 
 Schedule::command('bells:check')->everyMinute();
+Schedule::command('schedules:check-upcoming')->everyMinute();
