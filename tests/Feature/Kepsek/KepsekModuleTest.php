@@ -83,7 +83,7 @@ test('non kepsek can not access kepsek module', function () {
         ->assertForbidden();
 });
 
-test('kepsek can access report modules and export pdf', function () {
+test('kepsek can access report modules without export pdf', function () {
     $kepsek = User::factory()->create(['role' => User::ROLE_KEPSEK]);
     $guru = Guru::query()->create(['nama' => 'Guru Report']);
     $mataPelajaran = MataPelajaran::query()->create(['nama' => 'Ekonomi']);
@@ -112,15 +112,25 @@ test('kepsek can access report modules and export pdf', function () {
     $this->actingAs($kepsek)
         ->get(route('kepsek.reports.jadwal'))
         ->assertOk()
-        ->assertSee('Laporan Jadwal Pelajaran');
+        ->assertSee('Laporan Jadwal Pelajaran')
+        ->assertSee('Cetak')
+        ->assertDontSee('Export PDF');
 
     $this->actingAs($kepsek)
         ->get(route('kepsek.reports.presensi'))
         ->assertOk()
-        ->assertSee('Laporan Presensi Guru');
+        ->assertSee('Laporan Presensi Guru')
+        ->assertSee('Cetak')
+        ->assertDontSee('Export PDF');
 
     $this->actingAs($kepsek)
-        ->get(route('kepsek.reports.presensi.pdf'))
+        ->get(route('kepsek.reports.presensi.print'))
         ->assertOk()
-        ->assertHeader('content-type', 'application/pdf');
+        ->assertSee('Logo Sekolah')
+        ->assertSee('logo-sekolah.png')
+        ->assertSee('Laporan Presensi Guru Kepala Sekolah');
+
+    $this->actingAs($kepsek)
+        ->get('/kepsek/reports/presensi/pdf')
+        ->assertNotFound();
 });

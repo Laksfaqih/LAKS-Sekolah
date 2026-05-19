@@ -22,7 +22,7 @@ LAKS-Bel adalah aplikasi Laravel untuk manajemen jadwal pelajaran, presensi guru
 - Laravel Breeze Blade
 - MySQL untuk development default
 - Vite + Tailwind CSS
-- Export PDF internal tanpa package eksternal, memakai `App\\Support\\SimplePdfBuilder`
+- Laporan jadwal dan presensi dapat ditampilkan dan dicetak langsung dari aplikasi
 
 ## Instalasi Lokal
 
@@ -136,5 +136,5 @@ npm run build
 ## Catatan Implementasi
 
 - Format identitas sekolah pada laporan memakai `nama sekolah`, `NPSN`, `alamat`, `telepon`, `email`, `website`, dan `nama kepala sekolah`.
-- Export PDF menggunakan builder internal sederhana agar tidak menambah dependency package PDF eksternal.
+- Laporan disiapkan untuk tampilan web dan cetak langsung tanpa dependency package PDF tambahan.
 - Audio bel disimpan di disk `public` pada folder `storage/app/public/bells`.

@@ -70,10 +70,8 @@ Route::middleware('auth')->group(function () {
             Route::put('system-settings', [SystemSettingController::class, 'update'])->name('system-settings.update');
             Route::get('reports/jadwal', [AdminReportController::class, 'jadwal'])->name('reports.jadwal');
             Route::get('reports/jadwal/print', [AdminReportController::class, 'jadwalPrint'])->name('reports.jadwal.print');
-            Route::get('reports/jadwal/pdf', [AdminReportController::class, 'jadwalPdf'])->name('reports.jadwal.pdf');
             Route::get('reports/presensi', [AdminReportController::class, 'presensi'])->name('reports.presensi');
             Route::get('reports/presensi/print', [AdminReportController::class, 'presensiPrint'])->name('reports.presensi.print');
-            Route::get('reports/presensi/pdf', [AdminReportController::class, 'presensiPdf'])->name('reports.presensi.pdf');
             Route::get('backup-restore', [BackupController::class, 'edit'])->name('backup-restore.edit');
             Route::post('backup-restore/backup', [BackupController::class, 'backup'])->name('backup-restore.backup');
             Route::get('backup-restore/download', [BackupController::class, 'download'])->name('backup-restore.download');
@@ -109,10 +107,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/gurus', [KepsekGuruController::class, 'index'])->name('gurus.index');
             Route::get('/reports/jadwal', [KepsekReportController::class, 'jadwal'])->name('reports.jadwal');
             Route::get('/reports/jadwal/print', [KepsekReportController::class, 'jadwalPrint'])->name('reports.jadwal.print');
-            Route::get('/reports/jadwal/pdf', [KepsekReportController::class, 'jadwalPdf'])->name('reports.jadwal.pdf');
             Route::get('/reports/presensi', [KepsekReportController::class, 'presensi'])->name('reports.presensi');
             Route::get('/reports/presensi/print', [KepsekReportController::class, 'presensiPrint'])->name('reports.presensi.print');
-            Route::get('/reports/presensi/pdf', [KepsekReportController::class, 'presensiPdf'])->name('reports.presensi.pdf');
         });
 });
 

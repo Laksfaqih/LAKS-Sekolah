@@ -234,9 +234,9 @@ test('admin end to end flow works across core modules', function () {
         ->assertRedirect(route('admin.pengaturan-bel.index'));
 
     $this->actingAs($admin)->get(route('admin.dashboard'))->assertOk();
-    $this->actingAs($admin)->get(route('admin.reports.jadwal'))->assertOk()->assertSee('Biologi');
+    $this->actingAs($admin)->get(route('admin.reports.jadwal'))->assertOk()->assertSee('Biologi')->assertDontSee('Export PDF');
     $this->actingAs($admin)->get(route('admin.reports.jadwal.print'))->assertOk();
-    $this->actingAs($admin)->get(route('admin.reports.jadwal.pdf'))->assertOk()->assertHeader('content-type', 'application/pdf');
+    $this->actingAs($admin)->get('/admin/reports/jadwal/pdf')->assertNotFound();
     $this->actingAs($admin)->get(route('admin.backup-restore.edit'))->assertOk();
 });
 
